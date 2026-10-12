@@ -13,7 +13,7 @@ with open(filnavn, "r", encoding="utf-8-sig") as fil:
 
     for rad in leser:
         dato = rad["Tid(norsk normaltid)"]
-        temperatur = rad["Maksimum"]
+        temperatur = rad["Maksimumstemperatur (døgn)"]
 
         # Teller bare dager fra det valgte året
         if dato.endswith(aar) and temperatur != "" and temperatur != "-":

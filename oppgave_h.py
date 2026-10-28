@@ -1,6 +1,6 @@
 import csv
 
-filnavn = "sinnes_2014_2025.csv"
+filnavn = "sinnes_2014_2025_med_makstemperatur.csv"
 
 aar = input("Skriv inn år! ")
 

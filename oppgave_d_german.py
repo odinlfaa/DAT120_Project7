@@ -1,40 +1,52 @@
-import os
+import csv
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-# Gå til mappen der scriptet ligger, så filen blir funnet
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Finner CSV-filen i samme mappe som programmet
+mappe = Path(__file__).resolve().parent
+filnavn = mappe / 'oslo_blindern_1954_2025_med_makstemperatur.csv'
 
-# En liste for hver måned (indeks 0 = januar)
-vind = [[] for _ in range(12)]
+vind = [[] for i in range(12)]
 
-# Les filen linje for linje
-for linje in open("oslo_blindern_1954_2025_med_makstemperatur.csv", encoding="utf-8-sig"):
-    deler = linje.strip().split(";")
-    try:
-        maaned = int(deler[2].split(".")[1])         # dato er dd.mm.åååå
-        verdi = float(deler[6].replace(",", "."))    # komma -> punktum
-    except (ValueError, IndexError):
-        continue  # hopper over overskrift, bunntekst og manglende verdier
-    vind[maaned - 1].append(verdi)
+with open(filnavn, encoding='utf-8-sig') as fil:
+    for rad in csv.DictReader(fil, delimiter=';'):
+        dato = rad['Tid(norsk normaltid)']
+        styrke = rad['Høyeste middelvind (døgn)']
+        if not dato or not styrke or styrke == '-':
+            continue
+        maaned = int(dato.split('.')[1])
+        vind[maaned - 1].append(float(styrke.replace(',', '.')))
 
-def median(liste):
-    s = sorted(liste)
-    midt = len(s) // 2
-    if len(s) % 2 == 1:
-        return s[midt]
-    return (s[midt - 1] + s[midt]) / 2
+minimum = []
+median = []
+maksimum = []
 
-# Minimum, median og maksimum for hver måned
-minimum = [min(v) for v in vind]
-medianer = [median(v) for v in vind]
-maksimum = [max(v) for v in vind]
+for liste in vind:
+    liste.sort()
+    if len(liste) == 0:
+        minimum.append(None)
+        median.append(None)
+        maksimum.append(None)
+        continue
+    minimum.append(liste[0])
+    maksimum.append(liste[-1])
+    midten = len(liste) // 2
+    if len(liste) % 2 == 1:
+        median.append(liste[midten])
+    else:
+        median.append((liste[midten - 1] + liste[midten]) / 2)
 
-# Plott
-plt.plot(range(1, 13), minimum, label="Minimum")
-plt.plot(range(1, 13), medianer, label="Median")
-plt.plot(range(1, 13), maksimum, label="Maksimum")
-plt.xlabel("Måned")
-plt.ylabel("Vindstyrke (m/s)")
-plt.title("Oslo - Blindern: vindstyrke per måned")
+maaneder = ['Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des']
+
+plt.plot(maaneder, minimum, label='Minimum', marker='o')
+plt.plot(maaneder, median, label='Median', marker='o')
+plt.plot(maaneder, maksimum, label='Maksimum', marker='o')
+plt.title('Vindstyrke per måned – Oslo Blindern')
+plt.xlabel('Måned')
+plt.ylabel('Vindstyrke (m/s)')
 plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(mappe / 'vindstatistikk.png')
 plt.show()
